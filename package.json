@@ -1,0 +1,15 @@
+{
+  "name": "gitops-app",
+  "version": "1.0.0",
+  "description": "GitOps Demo Application",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "Your Name",
+  "license": "MIT"
+}
