@@ -15,9 +15,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set image tag
+        id: image-tag
+        run: echo "tag=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -28,24 +35,40 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.DOCKER_IMAGE }}
-          tags: |
-            type=sha,prefix=,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.image-tag.outputs.tag }}
+            ${{ env.DOCKER_IMAGE }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Image digest
-        run: echo "Image pushed with tags - ${{ steps.meta.outputs.tags }}"
+        run: echo "Image pushed with tag ${{ steps.image-tag.outputs.tag }}"
+
+  update-manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout manifests repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ secrets.MANIFEST_REPO }}
+          token: ${{ secrets.GH_PAT }}
+          ref: main
+
+      - name: Update image tag in deployment
+        run: |
+          sed -i "s|image: ${{ secrets.DOCKER_USERNAME }}/gitops-app:.*|image: ${{ secrets.DOCKER_USERNAME }}/gitops-app:${{ needs.build.outputs.image-tag }}|g" base/deployment.yaml
+          cat base/deployment.yaml
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "actions@github.com"
+          git add base/deployment.yaml
+          git diff-index --quiet HEAD || git commit -m "Update image to ${{ needs.build.outputs.image-tag }}"
+          git push origin main

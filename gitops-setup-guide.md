@@ -474,7 +474,6 @@ minikube service gitops-service -n gitops-app
 kubectl port-forward -n gitops-app svc/gitops-service 8080:80
 # Then visit http://localhost:8080
 ```
-
 ---
 
 ## 🔄 Phase 4: Install and Configure ArgoCD
@@ -593,7 +592,6 @@ minikube service gitops-service -n gitops-app
 
 **For Kind:**
 ```bash
-kubectl port-forward -n gitops-app svc/gitops-service 8081:80
 # Visit http://localhost:8081
 ```
 
@@ -635,27 +633,31 @@ git push origin main
 
 ### Step 25: Watch the Pipeline
 
-1. **GitHub Actions**: Go to Actions tab and watch the build
-2. **Docker Hub**: Check for new image with new tag
-3. **Update Manifest**: Once image is built, update the manifests repo
+**What happens automatically:**
 
-```bash
-# Go to manifests repo
-cd ~/Documents/gitops-nodejs-manifests
+1. **GitHub Actions** (CI): Builds new Docker image with your code changes → Pushes to Docker Hub
+<!-- 
+SHA (Secure Hash Algorithm) here refers to the Git commit SHA - a unique 40-character hexadecimal identifier 
+that Git generates for each commit. In the Docker image tagging context, a shortened version (typically the 
+first 7 characters, e.g., 'a8857a7') is used to tag Docker images, creating a direct correlation between 
+the Docker image and the specific Git commit that produced it. This enables traceability and version control 
+for containerized applications.
+-->
+2. **Docker Hub**: Stores the new image with tags (`latest` + commit SHA like `a8857a7`)
+3. **Manual Step** (for now): Tell ArgoCD to pull the new image
+   ```bash
+   cd ~/Documents/gitops-nodejs-manifests
+   git commit --allow-empty -m "Trigger ArgoCD sync"
+   git push origin main
+   ```
+   > **Why?** Your deployment uses `image: latest`. This commit triggers ArgoCD to check for changes and pull the newest `latest` tag from Docker Hub.
 
-# Get the new image tag from Docker Hub (it will be a commit SHA)
-# For now, we'll use 'latest' but in production you'd use the SHA
+4. **ArgoCD** (CD): Detects Git change → Pulls new `latest` image → Updates pods in Kubernetes
+5. **Test**: Refresh browser → You should see "Version 2.0"! 🎉
 
-# Update deployment.yaml (already using latest, so ArgoCD will detect the change)
-# If you want to force-pull, you can add imagePullPolicy
+**TL;DR:** Code change → GitHub builds image → Manual git commit → ArgoCD deploys → App updated!
 
-git add .
-git commit -m "Trigger redeployment" --allow-empty
-git push origin main
-```
-
-4. **ArgoCD**: Watch ArgoCD UI - it should detect the change and sync automatically
-5. **Test**: Refresh your application in the browser - you should see version 2.0!
+> 💡 **Phase 6 automates step 3** so GitHub Actions updates the manifest repo automatically!
 
 ---
 
@@ -724,7 +726,6 @@ jobs:
   update-manifest:
     needs: build
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout manifests repo
         uses: actions/checkout@v3
