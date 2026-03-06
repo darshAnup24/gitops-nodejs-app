@@ -2,13 +2,13 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('GitOps Pipeline Working 🚀🔥 Version: 2.0 - Updated!');
+  res.send('🎉 FULLY AUTOMATED GitOps Pipeline! 🎉 Version: 3.0');
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy', version: '2.0' });
+  res.status(200).json({ status: 'healthy', version: '3.0', automated: true });
 });
 
 app.listen(3000, () => {
-  console.log('Server running on port 3000 - Version 2.0');
+  console.log('Server running - FULL AUTOMATION ENABLED!');
 });
