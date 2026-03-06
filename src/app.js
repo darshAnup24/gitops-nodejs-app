@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-  res.send('🎉 FULLY AUTOMATED GitOps Pipeline! 🎉 Version: 3.0');
+  res.send('🎉 New commit lets see the ci-cd pipeline ');
 });
 
 app.get('/health', (req, res) => {
