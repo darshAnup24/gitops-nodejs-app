@@ -793,7 +793,7 @@ spec:
     spec:
       containers:
         - name: gitops-app
-          image: YOUR_DOCKERHUB_USERNAME/gitops-app:latest
+          image: madhavkeshava/gitops-app:latest
           imagePullPolicy: Always
           ports:
             - name: http
